@@ -257,7 +257,9 @@ static RSValue *hvalToValue(RedisModuleString *src, RLookupCoerceType type) {
     return RS_Int64Val(ll);
   } else if (type == RLOOKUP_C_DBL) {
     double dd = 0.0;
-    RedisModule_StringToDouble(src, &dd);
+    if (RedisModule_StringToDouble(src, &dd) != REDISMODULE_OK) {
+      return RS_NullVal();
+    };
     return RS_NumVal(dd);
   } else {
     return RS_OwnRedisStringVal(src);

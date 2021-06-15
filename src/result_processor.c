@@ -610,10 +610,11 @@ static int rploaderNext(ResultProcessor *base, SearchResult *r) {
 
     int isExplicitReturn = !!lc->nfields;
 
-    // Current behavior skips entire result if document does not exist.
-    // I'm unusre if that's intentional or an oversight.
+    // The document has been deleted/expired. Let's remove it.
     if (r->dmd == NULL || (r->dmd->flags & Document_Deleted)) {
-      return RS_RESULT_OK;
+      base->parent->totalResults--;
+      SearchResult_Clear(r);
+      continue;
     }
     RedisSearchCtx *sctx = lc->base.parent->sctx;
 
