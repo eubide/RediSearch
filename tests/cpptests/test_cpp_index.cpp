@@ -984,9 +984,9 @@ TEST_F(IndexTest, testDocTable) {
     ASSERT_EQ((int)dmd->score, i);
     ASSERT_EQ((int)dmd->flags, (int)(Document_DefaultFlags | Document_HasPayload));
 
-    t_docId xid = DocIdMap_Get(&dt.dim, buf, strlen(buf));
+    RSDocumentMetadata *dmdout = DocIdMap_Get(&dt.dim, buf, strlen(buf));
 
-    ASSERT_EQ((int)xid, i + 1);
+    ASSERT_EQ((int)dmdout->id, i + 1);
 
     int rc = DocTable_Delete(&dt, dmd->keyPtr, sdslen(dmd->keyPtr));
     ASSERT_EQ(1, rc);
@@ -1010,8 +1010,7 @@ TEST_F(IndexTest, testDocTable) {
   dmd = DocTable_Put(&dt, binBuf, binBufLen, 1.0, Document_DefaultFlags, NULL, 0, DocumentType_Hash);
   ASSERT_TRUE(dmd);
   ASSERT_NE(dmd->id, strDocId);
-  ASSERT_EQ(dmd->id, DocIdMap_Get(&dt.dim, binBuf, binBufLen));
-  ASSERT_EQ(strDocId, DocIdMap_Get(&dt.dim, "Hello", 5));
+  ASSERT_EQ(dmd, DocIdMap_Get(&dt.dim, binBuf, binBufLen));
   DocTable_Free(&dt);
 }
 

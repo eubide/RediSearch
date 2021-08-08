@@ -141,9 +141,6 @@ int TrieMapNode_Add(TrieMapNode **np, char *str, tm_len_t len, void *value, Trie
     if (cb) {
       n->value = cb(n->value, value);
     } else {
-      if (n->value) {
-        rm_free(n->value);
-      }
       n->value = value;
     }
 
@@ -444,12 +441,14 @@ int __trieMapNode_optimizeChildren(TrieMapNode *n, void (*freeCB)(void *)) {
       n->numChildren--;
       memmove(((char *)nodes) - 1, (char *)nodes, sizeof(TrieMapNode *) * n->numChildren);
       rc++;
+      break;
     } else {
       // this node is ok!
       // if needed - merge this node with it its single child
-      if (nodes[i] && nodes[i]->numChildren == 1) {
+      if (nodes[i]->numChildren == 1) {
         nodes[i] = __trieMapNode_MergeWithSingleChild(nodes[i]);
         rc++;
+        break;
       }
     }
     i++;
@@ -487,8 +486,6 @@ int TrieMapNode_Delete(TrieMapNode *n, char *str, tm_len_t len, void (*freeCB)(v
           if (n->value) {
             if (freeCB) {
               freeCB(n->value);
-            } else {
-              rm_free(n->value);
             }
             n->value = NULL;
           }
@@ -547,8 +544,6 @@ void TrieMapNode_Free(TrieMapNode *n, void (*freeCB)(void *)) {
   if (n->value) {
     if (freeCB) {
       freeCB(n->value);
-    } else {
-      rm_free(n->value);
     }
   }
 

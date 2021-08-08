@@ -280,7 +280,7 @@ DEBUG_COMMAND(IdToDocId) {
   if (!doc || (doc->flags & Document_Deleted)) {
     RedisModule_ReplyWithError(sctx->redisCtx, "document was removed");
   } else {
-    RedisModule_ReplyWithStringBuffer(sctx->redisCtx, doc->keyPtr, strlen(doc->keyPtr));
+    RedisModule_ReplyWithStringBuffer(sctx->redisCtx, doc->keyPtr, sdslen(doc->keyPtr));
   }
 end:
   SearchCtx_Free(sctx);

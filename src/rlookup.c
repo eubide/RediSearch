@@ -348,7 +348,7 @@ static int getKeyCommonHash(const RLookupKey *kk, RLookupRow *dst, RLookupLoadOp
   if (!*keyobj) {
     RedisModuleCtx *ctx = options->sctx->redisCtx;
     RedisModuleString *keyName =
-        RedisModule_CreateString(ctx, options->dmd->keyPtr, strlen(options->dmd->keyPtr));
+        RedisModule_CreateString(ctx, options->dmd->keyPtr, sdslen(options->dmd->keyPtr));
     *keyobj = RedisModule_OpenKey(ctx, keyName, REDISMODULE_READ);
     RedisModule_FreeString(ctx, keyName);
     if (!*keyobj) {
@@ -382,7 +382,7 @@ static int getKeyCommonHash(const RLookupKey *kk, RLookupRow *dst, RLookupLoadOp
     RedisModule_FreeString(RSDummyContext, val);
   } else if (!strncmp(kk->name, UNDERSCORE_KEY, strlen(UNDERSCORE_KEY))) {
     RedisModuleString *keyName = RedisModule_CreateString(options->sctx->redisCtx,
-                                  options->dmd->keyPtr, strlen(options->dmd->keyPtr));
+                                  options->dmd->keyPtr, sdslen(options->dmd->keyPtr));
     rsv = hvalToValue(keyName, RLOOKUP_C_STR);
     RedisModule_FreeString(options->sctx->redisCtx, keyName);
   } else {
@@ -438,7 +438,7 @@ static int getKeyCommonJSON(const RLookupKey *kk, RLookupRow *dst, RLookupLoadOp
   if (!jsonIter) {
     // The field does not exist and and it isn't `__key`
     if (!strncmp(kk->name, UNDERSCORE_KEY, strlen(UNDERSCORE_KEY))) {
-      rsv = RS_StringVal(options->dmd->keyPtr, strlen(options->dmd->keyPtr));
+      rsv = RS_StringVal(options->dmd->keyPtr, sdslen(options->dmd->keyPtr));
     } else {
       return REDISMODULE_ERR;
     }
