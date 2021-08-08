@@ -34,7 +34,7 @@ void SearchResult_Clear(SearchResult *r) {
 
   RLookupRow_Wipe(&r->rowdata);
   if (r->dmd) {
-    DMD_Decref(r->dmd);
+    //DMD_Decref(r->dmd);
     r->dmd = NULL;
   }
 }
@@ -120,7 +120,7 @@ static int rpidxNext(ResultProcessor *base, SearchResult *res) {
   res->score = 0;
   res->dmd = dmd;
   res->rowdata.sv = dmd->sortVector;
-  DMD_Incref(dmd);
+  //DMD_Incref(dmd);
   return RS_RESULT_OK;
 }
 
