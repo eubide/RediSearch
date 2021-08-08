@@ -25,6 +25,15 @@ typedef uint64_t t_fieldMask;
 #define RS_FIELDMASK_ALL 0xFFFFFFFFFFFFFFFF
 #endif
 
+/* macro for optimizations */
+  #if defined(__GNUC__)
+#define likely(x)       __builtin_expect((x),1)
+#define unlikely(x)     __builtin_expect((x),0)
+  #elif _MSC_VER
+#define likely(x)       (x)
+#define unlikely(x)     (x)
+  #endif
+
 struct RSSortingVector;
 
 #define REDISEARCH_ERR 1

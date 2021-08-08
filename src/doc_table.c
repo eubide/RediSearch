@@ -35,7 +35,7 @@ static inline int DocTable_ValidateDocId(const DocTable *t, t_docId docId) {
 }
 
 RSDocumentMetadata *DocTable_Get(const DocTable *t, t_docId docId) {
-  if (!DocTable_ValidateDocId(t, docId)) {
+  if (unlikely(!DocTable_ValidateDocId(t, docId))) {
     return NULL;
   }
   uint32_t bucketIndex = DocTable_GetBucket(t, docId);
@@ -53,24 +53,7 @@ RSDocumentMetadata *DocTable_Get(const DocTable *t, t_docId docId) {
 }
 
 int DocTable_Exists(const DocTable *t, t_docId docId) {
-  if (!docId || docId > t->maxDocId) {
-    return 0;
-  }
-  uint32_t ix = DocTable_GetBucket(t, docId);
-  if (ix >= t->cap) {
-    return 0;
-  }
-  const DMDChain *chain = t->buckets + ix;
-  if (chain == NULL) {
-    return 0;
-  }
-  DLLIST2_FOREACH(it, &chain->lroot) {
-    const RSDocumentMetadata *md = DLLIST2_ITEM(it, RSDocumentMetadata, llnode);
-    if (md->id == docId && !(md->flags & Document_Deleted)) {
-      return 1;
-    }
-  }
-  return 0;
+  return !!DocTable_Get(t, docId);
 }
 
 RSDocumentMetadata *DocTable_GetByKeyR(const DocTable *t, RedisModuleString *s) {
@@ -326,7 +309,7 @@ RSDocumentMetadata *DocTable_Pop(DocTable *t, const char *s, size_t n) {
   return NULL;
 }
 
-int DocTable_Replace(DocTable *t, const char *from_str, size_t from_len, const char *to_str,
+int DocTable_Rename(DocTable *t, const char *from_str, size_t from_len, const char *to_str,
                      size_t to_len) {
   t_docId id = DocIdMap_Get(&t->dim, from_str, from_len);
   if (id == 0) {

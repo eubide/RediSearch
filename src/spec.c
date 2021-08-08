@@ -2177,7 +2177,7 @@ void Indexes_ReplaceMatchingWithSchemaRules(RedisModuleCtx *ctx, RedisModuleStri
     }
     dictEntry *entry = dictFind(to_specs->specs, spec->name);
     if (entry) {
-      DocTable_Replace(&spec->docs, from_str, from_len, to_str, to_len);
+      DocTable_Rename(&spec->docs, from_str, from_len, to_str, to_len);
       size_t index = entry->v.u64;
       dictDelete(to_specs->specs, spec->name);
       array_del_fast(to_specs->specsOps, index);
