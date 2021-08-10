@@ -128,9 +128,8 @@ int Document_LoadSchemaFieldHash(Document *doc, RedisSearchCtx *sctx) {
       continue;
     }
     size_t oix = doc->numFields++;
-    doc->fields[oix].path = rm_strdup(field->path);
-    doc->fields[oix].name = (field->name == field->path) ? doc->fields[oix].path
-                                                         : rm_strdup(field->name);
+    doc->fields[oix].path = field->path;
+    doc->fields[oix].name = field->name;
     // on crdt the return value might be the underline value, we must copy it!!!
     doc->fields[oix].text = RedisModule_CreateStringFromString(sctx->redisCtx, v);
     RedisModule_FreeString(sctx->redisCtx, v);
@@ -189,9 +188,8 @@ int Document_LoadSchemaFieldJson(Document *doc, RedisSearchCtx *sctx) {
     }
 
     size_t oix = doc->numFields++;
-    doc->fields[oix].path = rm_strdup(field->path);
-    doc->fields[oix].name = (field->name == field->path) ? doc->fields[oix].path
-                                                         : rm_strdup(field->name);
+    doc->fields[oix].path = field->path;
+    doc->fields[oix].name = field->name;
 
     // on crdt the return value might be the underline value, we must copy it!!!
     // TODO: change `fs->text` to support hash or json not RedisModuleString
@@ -328,12 +326,6 @@ void Document_Clear(Document *d) {
   if (d->flags & (DOCUMENT_F_OWNSTRINGS | DOCUMENT_F_OWNREFS)) {
     for (size_t ii = 0; ii < d->numFields; ++ii) {
       DocumentField *field = &d->fields[ii];
-      if (d->flags & DOCUMENT_F_OWNSTRINGS) {
-        rm_free((void *)field->name);
-        if (field->path && (field->path != field->name)) {
-          rm_free((void *)field->path);
-        }
-      }
       if (field->text) {
         RedisModule_FreeString(RSDummyContext, field->text);
       }
