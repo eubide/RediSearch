@@ -20,11 +20,7 @@ static DocumentField *addFieldCommon(Document *d, const char *fieldname, uint32_
   d->fields = rm_realloc(d->fields, (++d->numFields) * sizeof(*d->fields));
   DocumentField *f = d->fields + d->numFields - 1;
   f->indexAs = typemask;
-  if (d->flags & DOCUMENT_F_OWNSTRINGS) {
-    f->name = rm_strdup(fieldname);
-  } else {
-    f->name = fieldname;
-  }
+  f->name = fieldname;
   f->path = NULL;
   return f;
 }
@@ -237,7 +233,7 @@ int Document_LoadAllFields(Document *doc, RedisModuleCtx *ctx) {
     v = RedisModule_CallReplyArrayElement(rep, i + 1);
     size_t nlen = 0;
     const char *name = RedisModule_CallReplyStringPtr(k, &nlen);
-    doc->fields[n].name = rm_strndup(name, nlen);
+    doc->fields[n].name = name;
     doc->fields[n].text = RedisModule_CreateStringFromCallReply(v);
   }
   rc = REDISMODULE_OK;
