@@ -30,14 +30,7 @@ static inline uint32_t DocTable_GetBucket(const DocTable *t, t_docId docId) {
   return docId < t->maxSize ? docId : docId % t->maxSize;
 }
 
-static inline int DocTable_ValidateDocId(const DocTable *t, t_docId docId) {
-  return docId != 0 && docId <= t->maxDocId;
-}
-
 RSDocumentMetadata *DocTable_Get(const DocTable *t, t_docId docId) {
-  if (!DocTable_ValidateDocId(t, docId)) {
-    return NULL;
-  }
   uint32_t bucketIndex = DocTable_GetBucket(t, docId);
   if (bucketIndex >= t->cap) {
     return NULL;
