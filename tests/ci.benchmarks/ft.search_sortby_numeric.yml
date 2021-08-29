@@ -1,0 +1,17 @@
+version: 0.2
+name: "ft.ft.search_sortby_numeric"
+description: "FT.SEARCH with SORTBY on NUMERIC"
+remote:
+ - type: oss-standalone
+ - setup: redisearch-m5d
+dbconfig:
+  - dataset: "./datasets/recordcount-100000.rdb"
+clientconfig:
+  - tool: redis-benchmark
+  - min-tool-version: "6.2.0"
+  - parameters:
+    - clients: 16
+    - requests: 10000
+    - threads: 2
+    - pipeline: 1
+    - command: '"FT.SEARCH" "index" "@productName:white|blue|green|red" "SORTBY" "productScore"'

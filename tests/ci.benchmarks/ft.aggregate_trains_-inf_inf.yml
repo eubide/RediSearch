@@ -1,0 +1,17 @@
+version: 0.2
+name: "ft.aggregate_trains_-inf_inf"
+description: "FT.AGGREGATE for trains range -inf to inf"
+remote:
+ - type: oss-standalone
+ - setup: redisearch-m5d
+dbconfig:
+  - dataset: "./datasets/trains.rdb"
+clientconfig:
+  - tool: redis-benchmark
+  - min-tool-version: "6.2.0"
+  - parameters:
+    - clients: 16
+    - requests: 100
+    - threads: 2
+    - pipeline: 1
+    - command: '"FT.aggregate" "idx:schedule" "@destination\\.workingArrivalTime:[-inf inf]"'

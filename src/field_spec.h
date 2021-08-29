@@ -68,23 +68,24 @@ Each field has a type, allowing us to add non text fields in the future */
 typedef struct FieldSpec {
   char *name;
   char *path;
+  int nameLen;
   FieldType types : 8;
   FieldSpecOptions options : 8;
+  // Flags for tag options
+  TagFieldFlags tagFlags : 8;
+  char tagSep;
 
   /** If this field is sortable, the sortable index */
   int16_t sortIdx;
 
   /** Unique field index. Each field has a unique index regardless of its type */
   uint16_t index;
+  // ID used to identify the field within the field mask
+  t_fieldId ftId;
 
-  // Flags for tag options
-  TagFieldFlags tagFlags : 16;
-  char tagSep;
 
   // weight in frequency calculations
   double ftWeight;
-  // ID used to identify the field within the field mask
-  t_fieldId ftId;
 
   // TODO: More options here..
 } FieldSpec;

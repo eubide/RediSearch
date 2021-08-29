@@ -1,0 +1,34 @@
+name: "ftsb-10M-nyc_taxis-hashes-load-5-numeric"
+description: "
+             nyc_taxis [details here](https://github.com/RediSearch/ftsb/blob/master/docs/nyc_taxis-benchmark/description.md), 
+             benchmark focused on write performance, making usage of TLC Trip Record Data that contains the rides that have been performed in yellow taxis in New York in 2015. 
+             On average each added document will have a size of 500 bytes.
+             Ingestion Type (FT.ADD|HSET): HSET
+             The use case generates an secondary index with 5 fields per document:
+                5 NUMERIC sortable fields.
+             "
+remote:
+ - type: oss-standalone
+ - setup: redisearch-m5
+dbconfig:
+  - init_commands:
+      - '"FT.CREATE" "nyc_taxis" "ON" "HASH" "SCHEMA" "passenger_count" "numeric" "SORTABLE" "trip_distance" "numeric" "SORTABLE" "fare_amount" "numeric" "SORTABLE" "tolls_amount" "numeric" "SORTABLE" "total_amount" "numeric" "SORTABLE"'
+clientconfig:
+  - tool: ftsb_redisearch
+  - parameters:
+    - workers: 64
+    - reporting-period: 1s
+    - input: "https://s3.amazonaws.com/benchmarks.redislabs/redisearch/datasets/1M-nyc_taxis-hashes/1M-nyc_taxis-hashes.redisearch.commands.ALL.csv"
+exporter:
+  redistimeseries:
+    break_by:
+      - version
+      - commit
+    timemetric: "$.StartTime"
+    metrics:
+      - "$.OverallRates.overallOpsRate"
+      - "$.OverallQuantiles.allCommands.q50"
+      - "$.OverallQuantiles.allCommands.q95"
+      - "$.OverallQuantiles.allCommands.q99"
+      - "$.OverallQuantiles.allCommands.q999"
+

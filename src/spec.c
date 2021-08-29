@@ -52,10 +52,10 @@ bool isTrimming = false;
 
 static const FieldSpec *getFieldCommon(const IndexSpec *spec, const char *name, size_t len) {
   for (size_t i = 0; i < spec->numFields; i++) {
-    if (len != strlen(spec->fields[i].name)) {
-      continue;
-    }
     const FieldSpec *fs = spec->fields + i;
+    //if (len != spec->fields[i].nameLen) {
+    //  continue;
+    //}
     if (!strncmp(fs->name, name, len)) {
       return fs;
     }
@@ -663,6 +663,7 @@ IndexSpecCache *IndexSpec_BuildSpecCache(const IndexSpec *spec) {
   for (size_t ii = 0; ii < spec->numFields; ++ii) {
     ret->fields[ii] = spec->fields[ii];
     ret->fields[ii].name = rm_strdup(spec->fields[ii].name);
+    ret->fields[ii].nameLen = spec->fields[ii].nameLen;
     // if name & path are pointing to the same string, copy pointer 
     if (ret->fields[ii].path && (spec->fields[ii].name != spec->fields[ii].path)) {
       ret->fields[ii].path = rm_strdup(spec->fields[ii].path);
@@ -1074,6 +1075,7 @@ FieldSpec *IndexSpec_CreateField(IndexSpec *sp, const char *name, const char *pa
   memset(fs, 0, sizeof(*fs));
   fs->index = sp->numFields++;
   fs->name = rm_strdup(name);
+  fs->nameLen = strlen(name);
   fs->path = (path) ? rm_strdup(path) : fs->name;
   fs->ftId = (t_fieldId)-1;
   fs->ftWeight = 1.0;
