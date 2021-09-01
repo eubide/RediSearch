@@ -65,7 +65,8 @@ cd $ROOT/deps
 [[ ! -d RedisJSON ]] && git clone --recursive https://github.com/RedisJSON/RedisJSON.git
 cd RedisJSON
 git checkout master
-git pull --recurse-submodules
+
+# git pull --recurse-submodules
 # ./deps/readies/bin/getpy3
 $READIES/bin/getpy3
 ./system-setup.py

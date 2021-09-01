@@ -187,6 +187,16 @@ endif
 	@cd $(BINROOT) && cmake .. $(CMAKE_FLAGS)
 
 $(COMPAT_DIR)/redisearch.so: $(BINROOT)/Makefile
+ifeq ($(OSNICK),centos7)
+ifeq ($(wildcard $(BINDIR)/libstdc++.so.6.0.25),)
+	set -e ;\
+	cd $(BINDIR) ;\
+	wget -q -O libstdc.tgz http://redismodules.s3.amazonaws.com/gnu/libstdc%2B%2B.so.6.0.25-$(OS)-$(ARCH).tgz ;\
+	tar xzf libstdc.tgz ;\
+	rm libstdc.tgz ;\
+	ln -sf libstdc++.so.6.0.25 libstdc++.so.6
+endif
+endif
 	@echo Building ...
 	@$(MAKE) -C $(BINROOT) -j$(shell nproc)
 	@[ -f $(COMPAT_DIR)/redisearch.so ] && touch $(COMPAT_DIR)/redisearch.so
@@ -226,6 +236,11 @@ setup:
 
 fetch:
 	-git submodule update --init --recursive
+ifeq ($(wildcard $(ROOT)/deps/VectorSimilarity/.git),)
+	cd deps; git clone --recursive https://github.com/RedisLabsModules/VectorSimilarity.git
+else
+	-cd deps/VectorSimilarity; git submodule update --init --recursive
+endif
 
 #----------------------------------------------------------------------------------------------
 
