@@ -78,9 +78,6 @@ void QueryNode_Free(QueryNode *n) {
     case QN_LEXRANGE:
       QueryLexRangeNode_Free(&n->lxrng);
       break;
-    case QN_VECTOR:
-      VectorFilter_Free((void *)n->vn.vf);
-      break;
     case QN_WILDCARD:
     case QN_IDS:
       break;
@@ -184,12 +181,6 @@ QueryNode *NewNumericNode(const NumericFilter *flt) {
 QueryNode *NewGeofilterNode(const GeoFilter *flt) {
   QueryNode *ret = NewQueryNode(QN_GEO);
   ret->gn.gf = flt;
-  return ret;
-}
-
-QueryNode *NewVectorNode(struct VectorFilter *flt) {
-  QueryNode *ret = NewQueryNode(QN_VECTOR);
-  ret->vn.vf = flt;
   return ret;
 }
 
@@ -541,16 +532,6 @@ static IndexIterator *Query_EvalGeofilterNode(QueryEvalCtx *q, QueryGeofilterNod
   return NewGeoRangeIterator(q->sctx, node->gf);
 }
 
-static IndexIterator *Query_EvalVectorNode(QueryEvalCtx *q, QueryVectorNode *node) {
-  const FieldSpec *fs =
-      IndexSpec_GetField(q->sctx->spec, node->vf->property, strlen(node->vf->property));
-  if (!fs || !FIELD_IS(fs, INDEXFLD_T_VECTOR)) {
-    return NULL;
-  }
-
-  return NewVectorIterator(q->sctx, node->vf);
-}
-
 static IndexIterator *Query_EvalIdFilterNode(QueryEvalCtx *q, QueryIdFilterNode *node) {
   return NewIdListIterator(node->ids, node->len, 1);
 }
@@ -819,8 +800,6 @@ IndexIterator *Query_EvalNode(QueryEvalCtx *q, QueryNode *n) {
       return Query_EvalOptionalNode(q, n);
     case QN_GEO:
       return Query_EvalGeofilterNode(q, &n->gn, n->opts.weight);
-    case QN_VECTOR:
-      return Query_EvalVectorNode(q, &n->vn);
     case QN_IDS:
       return Query_EvalIdFilterNode(q, &n->fn);
     case QN_WILDCARD:
@@ -1065,13 +1044,6 @@ static sds QueryNode_DumpSds(sds s, const IndexSpec *spec, const QueryNode *qs, 
         s = sdscatprintf(s, "%llu,", (unsigned long long)qs->fn.ids[i]);
       }
       break;
-    case QN_VECTOR:
-      // TODO: add vector query params
-      s = sdscat(s, "VECTOR { ");
-      for (int i = 0; i < qs->vn.vf->resultsLen; i++) {
-        s = sdscatprintf(s, "[%lu,%lf]", qs->vn.vf->results[i].id, qs->vn.vf->results[i].score);
-      }
-      break;
     case QN_WILDCARD:
       s = sdscat(s, "<WILDCARD>");
       break;
@@ -1203,41 +1175,6 @@ static int QueryNode_ApplyAttribute(QueryNode *qn, QueryAttribute *attr, QueryEr
     }
     // qn->opts.noPhonetic = PHONETIC_DEFAULT -> means no special asks regarding phonetics
     //                                          will be enable if field was declared phonetic
-
-  } else if (STR_EQCASE(attr->name, attr->namelen, "base64")) {
-    if (qn->type != QN_VECTOR) {
-      QueryError_SetErrorFmt(status, QUERY_EGENERIC, "Attribute %s requires vector node",
-                             attr->name);
-      return 0;
-    }
-    
-    // Apply base64 for vector similarity : true|false
-    int b;
-    if (qn->type != QN_VECTOR || !ParseBoolean(attr->value, &b)) {
-      MK_INVALID_VALUE();
-      return 0;
-    }
-    if (b) {
-      // The query string will be converted back to regular string
-      qn->vn.vf->isBase64 = true;
-    } else {
-      qn->vn.vf->isBase64 = false;
-    }
-
-  } else if (STR_EQCASE(attr->name, attr->namelen, "efRuntime")) {
-    if (qn->type != QN_VECTOR) {
-      QueryError_SetErrorFmt(status, QUERY_EGENERIC, "Attribute %s requires vector node",
-                             attr->name); 
-      return 0;
-    }
-    
-    // Apply base64 for vector similarity: [1...INF]
-    long long val;
-    if (!ParseInteger(attr->value, &val) || val < 1) {
-      MK_INVALID_VALUE();
-      return 0;
-    }
-    qn->vn.vf->efRuntime = val;
 
   } else {
     QueryError_SetErrorFmt(status, QUERY_ENOOPTION, "Invalid attribute %.*s", (int)attr->namelen,

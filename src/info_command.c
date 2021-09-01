@@ -91,8 +91,8 @@ static const char *getSpecTypeNames(int idx) {
   switch (idx) {
   case IXFLDPOS_FULLTEXT: return SPEC_TEXT_STR;
   case IXFLDPOS_TAG:      return SPEC_TAG_STR;
-  case IXFLDPOS_NUMERIC:  return NUMERIC_STR;
-  case IXFLDPOS_GEO:      return GEO_STR;
+  case IXFLDPOS_NUMERIC:  return SPEC_NUMERIC_STR;
+  case IXFLDPOS_GEO:      return SPEC_GEO_STR;
   
   default:
     RS_LOG_ASSERT(0, "oops");

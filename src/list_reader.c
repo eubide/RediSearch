@@ -1,5 +1,4 @@
 #include "list_reader.h"
-#include "VecSim/vecsim.h"
 
 typedef struct {
   IndexIterator base;
@@ -59,7 +58,7 @@ void ListIterator_Free(struct indexIterator *self) {
 
   IndexResult_Free(it->base.current);
   if (it->list) {
-    VecSimQueryResult_Free(it->list);
+    //VecSimQueryResult_Free(it->list);
   }
   rm_free(it);
 }

@@ -319,107 +319,6 @@ static int parseTextField(FieldSpec *fs, ArgsCursor *ac, QueryError *status) {
   return 1;
 }
 
-static int parseVectorField(FieldSpec *fs, ArgsCursor *ac, QueryError *status) {
-  int rc;
-  // this is a vector field
-  // init default type, size, distance metric and algorithm
-
-  // parse type
-  const char *typeStr;
-  size_t len;
-  if ((rc = AC_GetString(ac, &typeStr, &len, 0)) != AC_OK) {
-    QERR_MKBADARGS_AC(status, "vecsim type", rc);
-    return 0;
-  }
-  if (!strncasecmp(VECSIM_TYPE_FLOAT32, typeStr, len)) 
-    fs->vecSimParams.type = VecSimType_FLOAT32;
-  else if (!strncasecmp(VECSIM_TYPE_FLOAT64, typeStr, len)) 
-    fs->vecSimParams.type = VecSimType_FLOAT64;
-  else if (!strncasecmp(VECSIM_TYPE_INT32, typeStr, len)) 
-    fs->vecSimParams.type = VecSimType_INT32;
-  else if (!strncasecmp(VECSIM_TYPE_INT64, typeStr, len)) 
-    fs->vecSimParams.type = VecSimType_INT64;
-  else {
-    QERR_MKBADARGS_AC(status, "vecsim type", AC_ERR_PARSE);
-    return 0;
-  }
-
-  // parse size
-  long long size;
-  if ((rc = AC_GetSize(ac, &fs->vecSimParams.size, 0)) != AC_OK) {
-    QERR_MKBADARGS_AC(status, "vecsim size", rc);
-    return 0;
-  }
-
-  // parse metric
-  const char *metricStr;
-  if ((rc = AC_GetString(ac, &metricStr, &len, 0)) != AC_OK) {
-    QERR_MKBADARGS_AC(status, "vecsim metric", rc);
-    return 0;
-  }
-  if (!strncasecmp(VECSIM_METRIC_IP, metricStr, len)) 
-    fs->vecSimParams.type = VecSimMetric_IP;
-  else if (!strncasecmp(VECSIM_METRIC_L2, metricStr, len)) 
-    fs->vecSimParams.type = VecSimMetric_L2;
-  else {
-    QERR_MKBADARGS_AC(status, "vecsim metric", AC_ERR_PARSE);
-    return 0;
-  }
-
-  // parse algorithm
-  const char *algStr;
-  if ((rc = AC_GetString(ac, &algStr, &len, 0)) != AC_OK) {
-    QERR_MKBADARGS_AC(status, "vecsim algorithm", rc);
-    return 0;
-  }
-  if (!strncasecmp(VECSIM_ALGORITHM_BF, algStr, len)) 
-    fs->vecSimParams.algo = VecSimAlgo_BF;
-  else if (!strncasecmp(VECSIM_ALGORITHM_HNSW, algStr, len)) 
-    fs->vecSimParams.algo = VecSimAlgo_HNSWLIB;
-  else {
-    QERR_MKBADARGS_AC(status, "vecsim algorithm", AC_ERR_PARSE);
-    return 0;
-  }
-
-  // defaults for optional params
-  fs->vecSimParams.bfParams.initialCapacity = 1000;
-  fs->vecSimParams.hnswParams.initialCapacity = 1000;
-  fs->vecSimParams.hnswParams.M = 16;
-  fs->vecSimParams.hnswParams.efConstruction = 200;
-
-  // TODO: fix for different order
-  if (AC_AdvanceIfMatch(ac, VECSIM_INITIAL_CAP)) {
-      size_t initialCap;
-      if ((rc = AC_GetSize(ac, &initialCap, 0)) != AC_OK) {
-        QERR_MKBADARGS_AC(status, "vecsim initial cap", rc);
-        return 0;
-      }
-      fs->vecSimParams.bfParams.initialCapacity = initialCap;
-      fs->vecSimParams.hnswParams.initialCapacity = initialCap;
-  }
-
-  if (fs->vecSimParams.algo == VecSimAlgo_HNSWLIB) {
-    while (!AC_IsAtEnd(ac)) {
-      if (AC_AdvanceIfMatch(ac, VECSIM_M)) {
-        if ((rc = AC_GetSize(ac, &fs->vecSimParams.hnswParams.M, 0)) != AC_OK) {
-          QERR_MKBADARGS_AC(status, "vecsim m", rc);
-          return 0;
-        }
-        continue;
-
-      } else if (AC_AdvanceIfMatch(ac, VECSIM_EF)) {
-        double d;
-        if ((rc = AC_GetSize(ac, &fs->vecSimParams.hnswParams.efConstruction, 0)) != AC_OK) {
-          QERR_MKBADARGS_AC(status, "vecsim ef", rc);
-          return 0;
-        }
-        continue;
-      }
-    }
-  }
-  return 1;
-}
-
 /* Parse a field definition from argv, at *offset. We advance offset as we progress.
  *  Returns 1 on successful parse, 0 otherwise */
 static int parseFieldSpec(ArgsCursor *ac, IndexSpec *sp, FieldSpec *fs, QueryError *status) {
@@ -437,12 +336,6 @@ static int parseFieldSpec(ArgsCursor *ac, IndexSpec *sp, FieldSpec *fs, QueryErr
     fs->types |= INDEXFLD_T_NUMERIC;
   } else if (AC_AdvanceIfMatch(ac, SPEC_GEO_STR)) {  // geo field
     fs->types |= INDEXFLD_T_GEO;
-  } else if (AC_AdvanceIfMatch(ac, SPEC_VECTOR_STR)) {  // vector field
-    sp->flags |= Index_HasVecSim;
-    fs->types |= INDEXFLD_T_VECTOR;
-    if (!parseVectorField(fs, ac, status)) {
-      goto error;
-    }
   } else if (AC_AdvanceIfMatch(ac, SPEC_TAG_STR)) {  // tag field
     fs->types |= INDEXFLD_T_TAG;
     while (!AC_IsAtEnd(ac)) {
@@ -2105,23 +1998,6 @@ int IndexSpec_DeleteDoc(IndexSpec *spec, RedisModuleCtx *ctx, RedisModuleString 
     }
   }
 
-  // VecSim fields clear deleted data on the fly
-  if (spec->flags & Index_HasVecSim) {
-    for (int i = 0; i < spec->numFields; ++i) {
-      if (spec->fields[i].types == INDEXFLD_T_VECTOR) {
-        
-        RedisModuleString *rmskey = RedisModule_CreateString(ctx, spec->fields[i].name, strlen(spec->fields[i].name));
-        KeysDictValue *kdv = dictFetchValue(spec->keysDict, rmskey);
-        RedisModule_FreeString(ctx, rmskey);
-
-        if (!kdv) {
-          continue;
-        }
-        VecSimIndex *vecsim = kdv->p;
-        VecSimIndex_DeleteVector(vecsim, id);
-      }
-    }
-  }
   return REDISMODULE_OK;
 }
 

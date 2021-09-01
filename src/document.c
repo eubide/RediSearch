@@ -503,25 +503,6 @@ FIELD_PREPROCESSOR(vectorPreprocessor) {
   return 0;
 }
 
-FIELD_BULK_INDEXER(vectorIndexer) {
-  VecSimIndex *rt = bulk->indexDatas[IXFLDPOS_VECTOR];
-  if (!rt) {
-    RedisModuleString *keyName = IndexSpec_GetFormattedKey(ctx->spec, fs, INDEXFLD_T_VECTOR);
-    rt = bulk->indexDatas[IXFLDPOS_VECTOR] =
-        OpenVectorIndex(ctx, keyName/*, &bulk->indexKeys[IXFLDPOS_VECTOR]*/);
-    if (!rt) {
-      QueryError_SetError(status, QUERY_EGENERIC, "Could not open vector for indexing");
-      return -1;
-    }
-  }
-  // TODO: change return value to NRN_AddRv
-  int rv = VecSimIndex_AddVector(rt, fdata->vector, aCtx->doc->docId);
-  // TODO: update size statistics but put in a separate field to distinguise from inverted indexes
-  // ctx->spec->stats.invertedSize += rt->size * sizeof(double) * 2;
-  ctx->spec->stats.numRecords++;
-  return 0;
-}
-
 FIELD_PREPROCESSOR(geoPreprocessor) {
   size_t len;
   const char *str = NULL;
@@ -615,9 +596,6 @@ int IndexerBulkAdd(IndexBulkData *bulk, RSAddDocumentCtx *cur, RedisSearchCtx *s
         case IXFLDPOS_NUMERIC:
         case IXFLDPOS_GEO:
           rc = numericIndexer(bulk, cur, sctx, field, fs, fdata, status);
-          break;
-        case IXFLDPOS_VECTOR:
-          rc = vectorIndexer(bulk, cur, sctx, field, fs, fdata, status);
           break;
         case IXFLDPOS_FULLTEXT:
           break;

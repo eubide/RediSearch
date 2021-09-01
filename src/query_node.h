@@ -47,9 +47,6 @@ typedef enum {
   /* Lexical range */
   QN_LEXRANGE,
 
-  /* Vector */
-  QN_VECTOR,
-
   /* Null term - take no action */
   QN_NULL
 } QueryNodeType;

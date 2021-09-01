@@ -6,7 +6,6 @@
 #include "document.h"
 #include "value.h"
 #include "geo_index.h"
-#include "vector_index.h"
 
 struct InvertedIndex;
 

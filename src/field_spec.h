@@ -3,7 +3,6 @@
 
 #include "redisearch.h"
 #include "value.h"
-#include "VecSim/vecsim.h"
 
 #ifdef __cplusplus
 #define RS_ENUM_BITWISE_HELPER(T)   \
@@ -89,9 +88,6 @@ typedef struct FieldSpec {
   double ftWeight;
   // ID used to identify the field within the field mask
   t_fieldId ftId;
-
-  // Vector similarity index parameters.
-  VecSimParams vecSimParams;
 
   // TODO: More options here..
 } FieldSpec;

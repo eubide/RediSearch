@@ -41,7 +41,6 @@
 #include "../util/arr.h"
 #include "../rmutil/vector.h"
 #include "../query_node.h"
-#include "vector_index.h"
 
 // strndup + lowercase in one pass!
 char *strdupcase(const char *s, size_t len) {
@@ -136,9 +135,6 @@ static int one_not_null(void *a, void *b, void *out) {
 
 %type geo_filter { GeoFilter *}
 %destructor geo_filter { GeoFilter_Free($$); }
-
-%type vector_filter { VectorFilter *}
-%destructor vector_filter { VectorFilter_Free($$); }
 
 %type modifierlist { Vector* }
 %destructor modifierlist { 
@@ -549,33 +545,6 @@ geo_filter(A) ::= LSQB num(B) num(C) num(D) TERM(E) RSQB. [NUMBER] {
     A = NewGeoFilter(B.num, C.num, D.num, buf);
     GeoFilter_Validate(A, ctx->status);
 }
-
-
-expr(A) ::= modifier(B) COLON vector_filter(C). {
-    // we keep the capitalization as is
-    if (C) {
-        C->property = rm_strndup(B.s, B.len);
-        A = NewVectorNode(C);
-    } else {
-        A = NewQueryNode(QN_NULL);
-    }
-}
-
-vector_filter(A) ::= LSQB TERM(B) TERM(C) num(D) RSQB. [NUMBER] {
-    char buf[16] = {0};
-    if (C.len < 8) {
-        memcpy(buf, C.s, C.len);
-    } else {
-        strcpy(buf, "INVALID"); //TODO: can be removed?
-        QERR_MKSYNTAXERR(ctx->status, "Invalid Vector Filter unit");
-    }
-
-    // `+ 3` comes to compensate for redisearch parser removing `=` chars
-    // at the end of the string. This is common on vecsim especialy with Base64
-    A = NewVectorFilter(B.s, B.len + 3, buf, D.num);
-}
-
-
 
 /////////////////////////////////////////////////////////////////
 // Primitives - numbers and strings
