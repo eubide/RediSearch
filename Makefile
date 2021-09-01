@@ -236,11 +236,6 @@ setup:
 
 fetch:
 	-git submodule update --init --recursive
-ifeq ($(wildcard $(ROOT)/deps/VectorSimilarity/.git),)
-	cd deps; git clone --recursive https://github.com/RedisLabsModules/VectorSimilarity.git
-else
-	-cd deps/VectorSimilarity; git submodule update --init --recursive
-endif
 
 #----------------------------------------------------------------------------------------------
 

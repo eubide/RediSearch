@@ -94,7 +94,6 @@ ENDIF()
 # Set globals here!
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/deps)
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/deps/VectorSimilarity/src)
 
 ADD_DEFINITIONS(-DREDISMODULE_EXPERIMENTAL_API)
 ADD_DEFINITIONS(-D_GNU_SOURCE)
@@ -107,27 +106,6 @@ ADD_SUBDIRECTORY(src/rmutil)
 ADD_SUBDIRECTORY(src/dep/friso)
 ADD_SUBDIRECTORY(src/dep/snowball)
 ADD_SUBDIRECTORY(src/dep/phonetics)
-
-include (ExternalProject)
-ExternalProject_Add (VectorSimilarity
-	SOURCE_DIR      ${CMAKE_CURRENT_SOURCE_DIR}/deps/VectorSimilarity/src
-	PREFIX          ${CMAKE_CURRENT_BINARY_DIR}/VectorSimilarity
-	CMAKE_ARGS      -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/VectorSimilarity
-	CMAKE_ARGS      -DVECSIM_STATIC:BOOL=ON
-)
-
-ExternalProject_Get_Property (VectorSimilarity install_dir)
-set(VectorSimilarity_bindir ${install_dir})
-message("VectorSimilarity bindir: ${VectorSimilarity_bindir}")
-
-include_directories (${VectorSimilarity_bindir}/include)
-
-add_library (vecsim STATIC IMPORTED)
-set_target_properties (vecsim PROPERTIES IMPORTED_LOCATION ${VectorSimilarity_bindir}/src/VectorSimilarity-build/libVectorSimilarity.a)
-
-add_library (openblas STATIC IMPORTED)
-set_target_properties (openblas PROPERTIES IMPORTED_LOCATION ${VectorSimilarity_bindir}/src/VectorSimilarity-build/OpenBLAS/lib/libopenblas.a)
-
 
 FILE(GLOB RS_SRC
     "src/*.c"
@@ -201,8 +179,6 @@ ENDIF()
 IF (APPLE) 
     SET_TARGET_PROPERTIES(redisearch PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 ENDIF()
-
-add_dependencies(redisearch VectorSimilarity)
 
 IF (RS_RUN_TESTS AND NOT RS_BUILD_COORDINATOR)
     SET(BUILD_SHARED_LIBS ON CACHE BOOL "enable shared libs" FORCE)
